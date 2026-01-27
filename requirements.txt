@@ -1,0 +1,18 @@
+# RFAM Toolbox Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core dependencies
+opencv-python>=4.5.0
+numpy>=1.20.0
+matplotlib>=3.4.0
+pandas>=1.3.0
+scikit-image>=0.18.0
+
+# Optional: PDF support for importing scanned PDFs
+pdf2image>=1.14.0
+
+# Note: tkinter is required but typically bundled with Python
+# If missing, install via your system package manager:
+#   macOS: brew install python-tk
+#   Ubuntu: sudo apt-get install python3-tk
+#   Windows: Usually included with Python installer

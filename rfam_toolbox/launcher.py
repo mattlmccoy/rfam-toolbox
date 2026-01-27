@@ -42,8 +42,8 @@ def main() -> None:
         # When the user chooses dimensional analysis, invoke the
         # GUI-based dimensional workflow defined in the dimensional subpackage.
         try:
-            from rfam_toolbox.dimensional.gui import run_dimensional_analysis
-            run_dimensional_analysis()
+            from rfam_toolbox.dimensional.gui import main as dimensional_main
+            dimensional_main()
         except Exception as e:
             print("Error launching dimensional analysis:", e)
             raise

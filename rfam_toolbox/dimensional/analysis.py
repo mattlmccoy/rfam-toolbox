@@ -840,6 +840,28 @@ def analyze_checkerboard(
     return out
 
 
+def _nan_ring_result(overrides: Optional[Dict[str, Any]] = None) -> Dict[str, float]:
+    """Return a ring-analysis result dict with NaN metric values.
+
+    Used when the algorithm exits early (no edges, zero moment, etc.).
+    *overrides* lets the caller inject diagnostic keys such as
+    ``algorithm_error``.
+    """
+    result: Dict[str, Any] = {
+        "mean_line_width_mm": float("nan"),
+        "std_line_width_mm": float("nan"),
+        "mean_spacing_mm": float("nan"),
+        "std_spacing_mm": float("nan"),
+        "line_width_error_mm": float("nan"),
+        "spacing_error_mm": float("nan"),
+        "num_peaks": 0,
+        "algorithm_error": "",
+    }
+    if overrides:
+        result.update(overrides)
+    return result
+
+
 def analyze_concentric_rings(
     roi: np.ndarray,
     px_per_mm: float,
@@ -1454,7 +1476,7 @@ def recommend_compensation_overall(
             sense = "undersized" if de < 0 else "oversized"
             lines.append(f"Dot size bias (diameter error): { _pct(de) } ({sense} vs nominal).")
             lines.append(f"Diameter-based scale cross-check: multiply XY by {dm:.6f} (diagnostic only).")
-            if spacing_scale_used:
+            if geom_available:
                 lines.append(
                     "  Interpretation: dot spacing calibrates the motion frame. If spacing looks calibrated but dots are "
                     f"{sense}, the dominant error is deposition morphology (drop volume, wetting, wicking), not XY motion scale."

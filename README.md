@@ -1,5 +1,10 @@
 # RFAM Toolbox
 
+[![CI](https://github.com/mattlmccoy/rfam-toolbox/actions/workflows/ci.yml/badge.svg)](https://github.com/mattlmccoy/rfam-toolbox/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/rfam-toolbox.svg)](https://pypi.org/project/rfam-toolbox/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 **Open-source tools for Radio Frequency Additive Manufacturing (RFAM) and Binder Jet Additive Manufacturing (BJAM) process development.**
 
 This repository provides two complementary analysis tools designed to help researchers and operators assess and improve print quality:
@@ -8,6 +13,96 @@ This repository provides two complementary analysis tools designed to help resea
 2. **Ink Concentration Tool** - Analyze ink deposition properties through region-of-interest measurements
 
 Both tools use high-resolution flatbed scanners as the primary imaging device, providing micron-scale measurement capability at commodity cost.
+
+---
+
+## Installation
+
+### Quick Install (all platforms)
+
+```bash
+pip install rfam-toolbox
+```
+
+### From Source
+
+```bash
+git clone https://github.com/mattlmccoy/rfam-toolbox.git
+cd rfam-toolbox
+pip install .
+```
+
+### Using the Install Scripts
+
+**Linux / macOS:**
+```bash
+bash scripts/install.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+.\scripts\install.ps1
+```
+
+The install scripts check for Python 3.9+, tkinter, and install the package automatically.
+
+### Prerequisites
+
+- **Python 3.9 or higher** ([download](https://www.python.org/downloads/))
+- **tkinter** (usually bundled with Python)
+
+If tkinter is missing:
+
+| Platform | Command |
+|----------|---------|
+| macOS | `brew install python-tk` |
+| Ubuntu / Debian | `sudo apt-get install python3-tk` |
+| Fedora / RHEL | `sudo dnf install python3-tkinter` |
+| Windows | Reinstall Python and check "tcl/tk and IDLE" |
+
+### Optional: PDF Support
+
+To import scanned PDFs directly, install poppler:
+
+```bash
+# macOS
+brew install poppler
+
+# Ubuntu/Debian
+sudo apt-get install poppler-utils
+
+# Windows — download from https://github.com/osber/pdf2image
+```
+
+Then install the PDF extra: `pip install rfam-toolbox[pdf]`
+
+For detailed platform-specific instructions, see [INSTALL.md](INSTALL.md).
+
+---
+
+## Quick Start
+
+### Launch the tool
+
+```bash
+rfam-toolbox
+```
+
+Or equivalently:
+
+```bash
+python -m rfam_toolbox
+```
+
+A dialog will ask which workflow you want to use:
+- **Yes** → Dimensional Accuracy Analysis
+- **No** → Ink Concentration Analysis
+
+### Verify Installation
+
+```bash
+rfam-toolbox --version
+```
 
 ---
 
@@ -32,42 +127,7 @@ Both tools use high-resolution flatbed scanners as the primary imaging device, p
 
 ---
 
-## Installation
-
-### Requirements
-- Python 3.7 or higher
-- tkinter (usually bundled with Python)
-
-### Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### Optional: PDF support
-To import scanned PDFs directly, you'll also need poppler:
-```bash
-# macOS
-brew install poppler
-
-# Ubuntu/Debian
-sudo apt-get install poppler-utils
-
-# Windows
-# Download from: https://github.com/osber/pdf2image
-```
-
----
-
-## Quick Start
-
-### Launch the tool
-```bash
-python -m rfam_toolbox.launcher
-```
-
-A dialog will ask which workflow you want to use:
-- **Yes** → Dimensional Accuracy Analysis
-- **No** → Ink Concentration Analysis
+## Workflows
 
 ### Dimensional Accuracy Workflow
 
@@ -100,6 +160,7 @@ A dialog will ask which workflow you want to use:
 ```
 rfam-toolbox/
 ├── rfam_toolbox/              # Main package
+│   ├── __main__.py            # python -m rfam_toolbox entry point
 │   ├── launcher.py            # Unified entry point
 │   ├── dimensional/           # Dimensional accuracy analysis
 │   │   ├── gui.py             # GUI for dimensional workflow
@@ -115,12 +176,19 @@ rfam-toolbox/
 │       └── utils.py           # Helper functions
 ├── geometries/                # Reference calibration patterns
 │   └── gold_standard_patterns/
-├── examples/                  # Usage examples
-├── docs/                      # Extended documentation
-├── tests/                     # Unit tests
+├── scripts/                   # Install helper scripts
+│   ├── install.sh             # Linux / macOS installer
+│   └── install.ps1            # Windows installer
+├── .github/workflows/         # CI/CD
+│   ├── ci.yml                 # Test matrix (Linux, macOS, Windows)
+│   └── publish.yml            # Auto-publish to PyPI on release
+├── pyproject.toml             # Package configuration
 ├── requirements.txt
+├── Makefile
 ├── LICENSE
-└── README.md
+├── README.md
+├── INSTALL.md                 # Detailed platform install guide
+└── CONTRIBUTING.md            # Developer guide
 ```
 
 ---
@@ -145,8 +213,8 @@ Each analysis run creates a timestamped folder under `session_data/` containing:
 
 The tool is designed to work with calibration patterns containing:
 
-- **Dot array**: 5×5 grid of 2mm diameter dots at 6mm pitch
-- **Checkerboard**: 8×8 pattern of 2mm squares
+- **Dot array**: 5x5 grid of 2mm diameter dots at 6mm pitch
+- **Checkerboard**: 8x8 pattern of 2mm squares
 - **Concentric rings**: 20 rings with 0.5mm line width and 0.5mm spacing
 - **Pitch rulers**: Bars with widths from 0.1mm to 6mm
 
@@ -195,12 +263,7 @@ If you use this tool in your research, please cite:
 
 ## Contributing
 
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -am 'Add new feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 ---
 

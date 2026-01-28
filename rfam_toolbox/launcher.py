@@ -12,17 +12,25 @@ without removing any existing functionality.
 
 Usage::
 
-    python rfam_launcher.py
+    rfam-toolbox
+    python -m rfam_toolbox
 
 The launcher uses message boxes for simplicity; it does not
 interfere with the individual GUIs of the respective workflows.
 """
+import sys
 import tkinter as tk
 from tkinter import messagebox
 
 
 def main() -> None:
     """Prompt the user to choose a workflow and dispatch accordingly."""
+    # Handle --version flag
+    if "--version" in sys.argv or "-V" in sys.argv:
+        from rfam_toolbox import __version__
+        print(f"rfam-toolbox {__version__}")
+        return
+
     # Create a hidden root window for the dialog
     root = tk.Tk()
     root.withdraw()

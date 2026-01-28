@@ -8,5 +8,5 @@ This package provides two complementary analysis workflows:
 For usage, run: python -m rfam_toolbox.launcher
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Matthew L. McCoy"

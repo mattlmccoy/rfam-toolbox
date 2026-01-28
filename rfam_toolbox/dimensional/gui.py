@@ -46,7 +46,10 @@ import numpy as np
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 
-from pdf2image import convert_from_path  # for PDF → image
+try:
+    from pdf2image import convert_from_path  # optional — for PDF → image
+except ImportError:
+    convert_from_path = None
 
 from rfam_toolbox.dimensional.analysis import (
     analyze_dot_array,
@@ -232,6 +235,14 @@ class DimensionalGUI:
     def _load_image_any(self, path: str) -> np.ndarray | None:
         ext = os.path.splitext(path)[1].lower()
         if ext == ".pdf":
+            if convert_from_path is None:
+                messagebox.showerror(
+                    "Missing dependency",
+                    "PDF support requires the pdf2image package and poppler.\n\n"
+                    "Install with:  pip install rfam-toolbox[pdf]\n"
+                    "Then install poppler for your OS (see INSTALL.md).",
+                )
+                return None
             try:
                 pages = convert_from_path(path, dpi=300)
                 if not pages:

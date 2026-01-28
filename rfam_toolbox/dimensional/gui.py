@@ -889,7 +889,8 @@ class DimensionalGUI:
         ts_plot = datetime.now().strftime("%Y%m%d_%H%M%S")
         fig_path = os.path.join(fig_root, f"plot_{feat}_{metric}_{ts_plot}.png")
 
-        # NOTE: Unchanged: this uses xs/ys as in your original version
+        xs = list(range(len(values)))
+        ys = values
         plt.figure()
         plt.plot(xs, ys, marker="o")
         plt.xlabel("Sample index")

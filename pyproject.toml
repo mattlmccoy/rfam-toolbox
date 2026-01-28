@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rfam-toolbox"
-version = "1.0.0"
+version = "1.0.1"
 description = "Tools for Radio Frequency and Binder Jet Additive Manufacturing process analysis"
 readme = "README.md"
 license = "MIT"

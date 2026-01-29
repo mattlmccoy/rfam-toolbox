@@ -3,10 +3,10 @@
 menu.py — Tkinter launcher for the Ink Concentration analysis modes.
 
 Presents a menu with four mode buttons:
-  1. Data Collection  (active — launches the ROI + analysis pipeline)
-  2. Classification    (coming soon)
-  3. Plotting          (coming soon)
-  4. Concentration Estimation (coming soon)
+  1. Data Collection   — launches the ROI + analysis pipeline
+  2. Classification    — material & concentration classifiers
+  3. Plotting          — grouped intensity / histogram-metric plots
+  4. Concentration Estimation — isotonic + kNN regression estimator
 
 This replaces the previous direct-launch behaviour so users see
 the available modes before entering a workflow.
@@ -44,7 +44,7 @@ def main():
 
     btn_width = 35
 
-    # 1) Data Collection — active
+    # 1) Data Collection
     def _launch_data_collection():
         root.destroy()
         from bjam_toolbox.ink_concentration.main import main as dc_main
@@ -58,66 +58,52 @@ def main():
         command=_launch_data_collection,
     ).pack(pady=5)
 
-    # 2) Classification — stub
-    def _stub_classification():
-        messagebox.showinfo(
-            "Coming Soon",
-            "Classification mode is not yet implemented.\n\n"
-            "Planned features:\n"
-            "  • Weighted model\n"
-            "  • k-NN model\n"
-            "  • Logistic regression model\n"
-            "  • Concentration by skewness\n"
-            "  • Group plots by sample type or ROI label",
-        )
+    # 2) Classification
+    def _launch_classification():
+        root.destroy()
+        from bjam_toolbox.ink_concentration.classification import main as cls_main
+        cls_main()
 
     tk.Button(
         btn_frame,
-        text="Classification  (Coming Soon)",
+        text="Classification",
         width=btn_width,
         height=2,
-        command=_stub_classification,
-        state="normal",
+        command=_launch_classification,
     ).pack(pady=5)
 
-    # 3) Plotting — stub
+    # 3) Plotting (Coming Soon — plotting is embedded in Classification)
     def _stub_plotting():
         messagebox.showinfo(
-            "Coming Soon",
-            "Plotting mode is not yet implemented.\n\n"
-            "Planned features:\n"
-            "  • Group plots by sample type\n"
-            "  • Group plots by ROI label\n"
-            "  • Custom plot export",
+            "Plotting",
+            "Plotting is currently integrated into the Classification mode.\n\n"
+            "Run Classification to generate grouped plots by sample type "
+            "or ROI label.\n\n"
+            "A standalone plotting mode is planned for a future release.",
         )
 
     tk.Button(
         btn_frame,
-        text="Plotting  (Coming Soon)",
+        text="Plotting  (see Classification)",
         width=btn_width,
         height=2,
         command=_stub_plotting,
-        state="normal",
     ).pack(pady=5)
 
-    # 4) Concentration Estimation — stub
-    def _stub_concentration():
-        messagebox.showinfo(
-            "Coming Soon",
-            "Concentration Estimation mode is not yet implemented.\n\n"
-            "Planned features:\n"
-            "  • Select training data CSV\n"
-            "  • Select session CSV for classification\n"
-            "  • Run concentration estimate",
+    # 4) Concentration Estimation
+    def _launch_concentration():
+        root.destroy()
+        from bjam_toolbox.ink_concentration.concentration_estimator import (
+            main as ce_main,
         )
+        ce_main()
 
     tk.Button(
         btn_frame,
-        text="Concentration Estimation  (Coming Soon)",
+        text="Concentration Estimation",
         width=btn_width,
         height=2,
-        command=_stub_concentration,
-        state="normal",
+        command=_launch_concentration,
     ).pack(pady=5)
 
     # ── Quit button ─────────────────────────────────────────

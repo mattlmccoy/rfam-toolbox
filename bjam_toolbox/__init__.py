@@ -8,5 +8,5 @@ This package provides two complementary analysis workflows:
 For usage, run: python -m bjam_toolbox.launcher
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __author__ = "Matthew L. McCoy"

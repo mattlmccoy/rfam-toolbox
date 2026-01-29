@@ -35,9 +35,8 @@ def main():
         root,
         text="Select an analysis mode to begin.",
         font=("Helvetica", 11),
-        pady=(0, 10),
     )
-    subtitle.pack(fill="x")
+    subtitle.pack(fill="x", pady=(0, 10))
 
     # ── Button frame ────────────────────────────────────────
     btn_frame = tk.Frame(root, padx=20, pady=10)
@@ -127,7 +126,7 @@ def main():
         text="Quit",
         width=btn_width,
         command=root.destroy,
-    ).pack(pady=(15, 5))
+    ).pack(pady=15)
 
     root.mainloop()
 

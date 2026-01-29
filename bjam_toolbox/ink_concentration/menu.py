@@ -89,23 +89,20 @@ def main():
         command=_launch_bayesian,
     ).pack(pady=5)
 
-    # 4) Plotting (Coming Soon — plotting is embedded in Classification)
-    def _stub_plotting():
-        messagebox.showinfo(
-            "Plotting",
-            "Plotting is currently integrated into the Classification and\n"
-            "Bayesian Classification modes.\n\n"
-            "Run either classifier to generate grouped plots by sample type "
-            "or ROI label.\n\n"
-            "A standalone plotting mode is planned for a future release.",
+    # 4) Plotting (standalone)
+    def _launch_plotting():
+        root.destroy()
+        from bjam_toolbox.ink_concentration.plotting import (
+            main as plot_main,
         )
+        plot_main()
 
     tk.Button(
         btn_frame,
-        text="Plotting  (see Classification)",
+        text="Plotting",
         width=btn_width,
         height=2,
-        command=_stub_plotting,
+        command=_launch_plotting,
     ).pack(pady=5)
 
     # 5) Concentration Estimation

@@ -699,7 +699,11 @@ def main():
     clf.fit(X_train, y_train)
 
     # Cross-validation on training data
-    cv = StratifiedKFold(n_splits=min(5, min(np.bincount(y_train))), shuffle=True, random_state=42)
+    # Use per-class counts (ignoring unused bin-0 from bincount)
+    _, class_counts = np.unique(y_train, return_counts=True)
+    n_splits = min(5, int(class_counts.min()))
+    n_splits = max(2, n_splits)  # at least 2-fold
+    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
     y_pred_cv = cross_val_predict(clf, X_train, y_train, cv=cv)
 
     class_names = [INK_DESC.get(k, str(k)) for k in sorted(np.unique(y_train))]

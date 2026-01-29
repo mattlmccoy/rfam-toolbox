@@ -1,9 +1,9 @@
-# RFAM Toolbox - Windows installer (PowerShell)
+# BJAM Toolbox - Windows installer (PowerShell)
 # Usage:  .\scripts\install.ps1   (from a local checkout)
 
 $ErrorActionPreference = "Stop"
 $MIN_PYTHON = [version]"3.9"
-$PACKAGE = "rfam-toolbox"
+$PACKAGE = "bjam-toolbox"
 
 function Info($msg)  { Write-Host "[info]  $msg" -ForegroundColor Cyan }
 function Ok($msg)    { Write-Host "[ok]    $msg" -ForegroundColor Green }
@@ -56,11 +56,11 @@ if ($LASTEXITCODE -ne 0) { Fail "pip install failed." }
 
 # ---------- verify -----------------------------------------------------------
 try {
-    $version = & rfam-toolbox --version 2>&1
+    $version = & bjam-toolbox --version 2>&1
     Ok "Installation complete: $version"
 } catch {
-    Ok "Installation complete. If 'rfam-toolbox' is not on your PATH,"
-    Ok "try: $python -m rfam_toolbox"
+    Ok "Installation complete. If 'bjam-toolbox' is not on your PATH,"
+    Ok "try: $python -m bjam_toolbox"
 }
 
-Info "Run 'rfam-toolbox' to launch the application."
+Info "Run 'bjam-toolbox' to launch the application."

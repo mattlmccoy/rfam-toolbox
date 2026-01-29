@@ -1,6 +1,6 @@
 # Installation Guide
 
-Step-by-step instructions for installing RFAM Toolbox on every supported platform.
+Step-by-step instructions for installing BJAM Toolbox on every supported platform.
 
 ---
 
@@ -23,11 +23,11 @@ Step-by-step instructions for installing RFAM Toolbox on every supported platfor
 sudo apt-get update
 sudo apt-get install python3 python3-pip python3-tk
 
-# 2. Install RFAM Toolbox
-pip install rfam-toolbox
+# 2. Install BJAM Toolbox
+pip install bjam-toolbox
 
 # 3. Verify
-rfam-toolbox --version
+bjam-toolbox --version
 ```
 
 ### Fedora / RHEL / CentOS
@@ -36,11 +36,11 @@ rfam-toolbox --version
 # 1. Install Python and tkinter
 sudo dnf install python3 python3-pip python3-tkinter
 
-# 2. Install RFAM Toolbox
-pip install rfam-toolbox
+# 2. Install BJAM Toolbox
+pip install bjam-toolbox
 
 # 3. Verify
-rfam-toolbox --version
+bjam-toolbox --version
 ```
 
 ### Arch Linux
@@ -49,11 +49,11 @@ rfam-toolbox --version
 # 1. Install Python and tk
 sudo pacman -S python python-pip tk
 
-# 2. Install RFAM Toolbox
-pip install rfam-toolbox
+# 2. Install BJAM Toolbox
+pip install bjam-toolbox
 
 # 3. Verify
-rfam-toolbox --version
+bjam-toolbox --version
 ```
 
 ### Using the install script
@@ -79,11 +79,11 @@ brew install python
 # 2. Install tkinter
 brew install python-tk
 
-# 3. Install RFAM Toolbox
-pip3 install rfam-toolbox
+# 3. Install BJAM Toolbox
+pip3 install bjam-toolbox
 
 # 4. Verify
-rfam-toolbox --version
+bjam-toolbox --version
 ```
 
 ### With python.org installer
@@ -93,8 +93,8 @@ rfam-toolbox --version
 3. Open Terminal and run:
 
 ```bash
-pip3 install rfam-toolbox
-rfam-toolbox --version
+pip3 install bjam-toolbox
+bjam-toolbox --version
 ```
 
 ### Using the install script
@@ -116,8 +116,8 @@ bash scripts/install.sh
 3. Open PowerShell or Command Prompt and run:
 
 ```powershell
-pip install rfam-toolbox
-rfam-toolbox --version
+pip install bjam-toolbox
+bjam-toolbox --version
 ```
 
 ### With winget
@@ -127,8 +127,8 @@ rfam-toolbox --version
 winget install Python.Python.3.12
 
 # 2. Restart your terminal, then:
-pip install rfam-toolbox
-rfam-toolbox --version
+pip install bjam-toolbox
+bjam-toolbox --version
 ```
 
 ### Using the install script
@@ -170,14 +170,14 @@ To import scanned PDFs directly, you need poppler (a system library) plus the Py
 ### Install the Python wrapper
 
 ```bash
-pip install rfam-toolbox[pdf]
+pip install bjam-toolbox[pdf]
 ```
 
 ---
 
 ## Troubleshooting
 
-### "command not found: rfam-toolbox"
+### "command not found: bjam-toolbox"
 
 pip may have installed the script to a directory not on your PATH.
 
@@ -188,7 +188,7 @@ python -m site --user-base
 # Add that directory's bin/ (Linux/macOS) or Scripts/ (Windows) to your PATH
 
 # Or run directly:
-python -m rfam_toolbox
+python -m bjam_toolbox
 ```
 
 ### "No module named tkinter"
@@ -211,7 +211,7 @@ pip install opencv-python
 
 **Fix:** Use `--user` to install for your user only:
 ```bash
-pip install --user rfam-toolbox
+pip install --user bjam-toolbox
 ```
 
 Or use a virtual environment (recommended):
@@ -219,14 +219,14 @@ Or use a virtual environment (recommended):
 python -m venv .venv
 source .venv/bin/activate   # Linux/macOS
 # .venv\Scripts\activate    # Windows
-pip install rfam-toolbox
+pip install bjam-toolbox
 ```
 
 ### macOS: "This app is damaged" or security warnings
 
-macOS may block unsigned applications. Since RFAM Toolbox runs from Python directly, this shouldn't happen. If it does, ensure you're launching via the terminal:
+macOS may block unsigned applications. Since BJAM Toolbox runs from Python directly, this shouldn't happen. If it does, ensure you're launching via the terminal:
 ```bash
-rfam-toolbox
+bjam-toolbox
 ```
 
 ---
@@ -237,11 +237,11 @@ After installing, run these checks:
 
 ```bash
 # Check version
-rfam-toolbox --version
+bjam-toolbox --version
 
 # Check imports
-python -c "import rfam_toolbox; print('OK')"
+python -c "import bjam_toolbox; print('OK')"
 
 # Launch the tool
-rfam-toolbox
+bjam-toolbox
 ```

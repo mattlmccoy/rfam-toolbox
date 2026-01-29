@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# RFAM Toolbox — cross-platform installer for Linux and macOS.
+# BJAM Toolbox — cross-platform installer for Linux and macOS.
 # Usage:  curl -sSL https://raw.githubusercontent.com/mattlmccoy/rfam-toolbox/main/scripts/install.sh | bash
 #   or:   bash scripts/install.sh          (from a local checkout)
 set -euo pipefail
 
 MIN_PYTHON="3.9"
-PACKAGE="rfam-toolbox"
+PACKAGE="bjam-toolbox"
 
 # ---------- helpers ----------------------------------------------------------
 info()  { printf '\033[1;34m[info]\033[0m  %s\n' "$*"; }
@@ -87,13 +87,13 @@ else
 fi
 
 # ---------- verify -----------------------------------------------------------
-if command -v rfam-toolbox &>/dev/null; then
-    VERSION=$(rfam-toolbox --version)
+if command -v bjam-toolbox &>/dev/null; then
+    VERSION=$(bjam-toolbox --version)
     ok "Installation complete: ${VERSION}"
 else
     # Entry-point script may not be on PATH if --user install
-    ok "Installation complete. If 'rfam-toolbox' is not found, add"
+    ok "Installation complete. If 'bjam-toolbox' is not found, add"
     ok "  $("$PYTHON" -m site --user-base)/bin to your PATH."
 fi
 
-info "Run 'rfam-toolbox' to launch the application."
+info "Run 'bjam-toolbox' to launch the application."

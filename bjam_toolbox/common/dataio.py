@@ -1,4 +1,4 @@
-"""Data I/O for RFAM Image Analysis Tool."""
+"""Data I/O for BJAM Image Analysis Tool."""
 import pandas as pd
 import datetime
 import os

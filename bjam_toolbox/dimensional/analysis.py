@@ -1,5 +1,5 @@
 """
-feature_analysis.py — routines to analyse specific geometric features in the RFAM standard test pattern.
+feature_analysis.py — routines to analyse specific geometric features in the BJAM standard test pattern.
 
 This module contains a collection of functions that operate on cropped regions
 of scanned images to quantify dimensional accuracy of well-defined test
@@ -38,11 +38,14 @@ from typing import Dict, List, Tuple, Optional, Any
 import cv2
 import numpy as np
 
+from bjam_toolbox.defaults.config_loader import load_config
+_CFG = load_config()
+
 # ---------------------------------------------------------------------------
 # Public constants expected by dim_gui.py (do not rename)
 # ---------------------------------------------------------------------------
 FEATURE_ANALYSIS_VERSION = "2025-12-16-f-healthreport"
-CIRCULARITY_NORM_BASE = 0.899024 # OLD CIRC NORM: 0.898576
+CIRCULARITY_NORM_BASE = _CFG["calibration"]["circularity_norm_base"]
 
 # ---------------------------------------------------------------------------
 # Versioning
@@ -97,19 +100,20 @@ def _segment_blobs(gray: np.ndarray) -> np.ndarray:
     g = gray.copy()
     if g.dtype != np.uint8:
         g = cv2.normalize(g, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    g = cv2.GaussianBlur(g, (5, 5), 0)
+    g = cv2.GaussianBlur(g, tuple(_CFG["dot_array"]["gaussian_blur_kernel"]), 0)
     _, bw = cv2.threshold(g, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     # Light cleanup: close then open
-    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    bw = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, k, iterations=1)
-    bw = cv2.morphologyEx(bw, cv2.MORPH_OPEN, k, iterations=1)
+    _ks = _CFG["dot_array"]["morph_kernel_size"]
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (_ks, _ks))
+    bw = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, k, iterations=_CFG["dot_array"]["morph_close_iterations"])
+    bw = cv2.morphologyEx(bw, cv2.MORPH_OPEN, k, iterations=_CFG["dot_array"]["morph_open_iterations"])
     return bw
 
 
 def _measure_blobs_legacy(
     roi: np.ndarray,
     px_per_mm: float,
-    min_blob_area_px: int = 100,
+    min_blob_area_px: int = _CFG["dot_array"]["min_blob_area_px"],
 ) -> List[Dict[str, Any]]:
     """Legacy blob metrics: contours -> centroids -> circularity/ellipse."""
     gray = _to_gray(roi)
@@ -302,10 +306,10 @@ def analyze_dot_array(
     px_per_mm: float,
     nominal_diameter_mm: float,
     nominal_spacing_mm: float,
-    spacing_tol: float = 0.3,
+    spacing_tol: float = _CFG["dot_array"]["spacing_tolerance"],
     debug_overlay_path: Optional[str] = None,
     debug_log_path: Optional[str] = None,
-    min_blob_area_px: int = 100,
+    min_blob_area_px: int = _CFG["dot_array"]["min_blob_area_px"],
 ) -> Tuple[Dict[str, float], List[Dict]]:
     """Analyse a dot array inside a cropped ROI using the canonical blob/centroid pipeline.
 
@@ -337,8 +341,8 @@ def analyze_dot_array(
         if len(_diams_all) >= 5 and nominal_diameter_mm and not (isinstance(nominal_diameter_mm, float) and math.isnan(nominal_diameter_mm)):
             _med = float(np.median(np.array(_diams_all, dtype=float)))
             # Keep window: combine nominal-based and median-based gates.
-            _min_keep = max(0.45 * float(nominal_diameter_mm), 0.40 * _med)
-            _max_keep = max(1.75 * float(nominal_diameter_mm), 1.80 * _med)
+            _min_keep = max(_CFG["dot_array"]["min_keep_factor"] * float(nominal_diameter_mm), _CFG["dot_array"]["min_keep_factor_median"] * _med)
+            _max_keep = max(_CFG["dot_array"]["max_keep_factor"] * float(nominal_diameter_mm), _CFG["dot_array"]["max_keep_factor_median"] * _med)
             _before = len(details)
             details = [d for d in details if d.get("eq_diam_mm") is not None and not math.isnan(d.get("eq_diam_mm")) and (_min_keep <= float(d.get("eq_diam_mm")) <= _max_keep)]
             _after = len(details)
@@ -475,7 +479,7 @@ def analyze_dot_array(
 
         # Contextualised centroid radius relative to nominal 5x5 grid (6 mm pitch)
         # For that pattern, mean radius ≈ 11.2461856 mm
-        centroid_nominal_radius_mm = 11.2461856
+        centroid_nominal_radius_mm = _CFG["dot_array"]["nominal_grid_mean_radius"]
         summary["centroid_radius_mm"] = mean_radius
         summary["centroid_nominal_radius_mm"] = centroid_nominal_radius_mm
         radius_err = mean_radius - centroid_nominal_radius_mm
@@ -521,9 +525,9 @@ def analyze_checkerboard(
     dpi: Optional[float] = None,
     debug_overlay_path: Optional[str] = None,
     debug_log_path: Optional[str] = None,
-    scale_min: float = 0.30,
-    scale_step: float = 0.05,
-    checkerboard_ref_angle_deg: float = -45.0,
+    scale_min: float = _CFG["checkerboard"]["scale_min"],
+    scale_step: float = _CFG["checkerboard"]["scale_step"],
+    checkerboard_ref_angle_deg: float = _CFG["checkerboard"]["ref_angle_deg"],
 ) -> Dict[str, float]:
     """
     Analyse a checkerboard ROI using a component-based square filter that is robust to blur.
@@ -584,24 +588,24 @@ def analyze_checkerboard(
 
     # Parameters (logged every attempt, even on failure)
     params = {
-        "use_adaptive": False,
-        "gaussian_blur_ksize": 5,
-        "morph_kernel": 3,
-        "morph_close_iter": 0,   # close can merge squares; keep 0 for baseline
-        "morph_open_iter": 0,
-        "min_squares_required": 10,
-        "aspect_ratio_min": 0.70,
-        "aspect_ratio_max": 1.30,
-        "extent_min": 0.2,      # area/(w*h)
-        "extent_max": 1.05,
-        "area_rel_min": 0.20,
-        "area_rel_max": 5.00,
+        "use_adaptive": _CFG["checkerboard"]["use_adaptive_threshold"],
+        "gaussian_blur_ksize": _CFG["checkerboard"]["gaussian_blur_ksize"],
+        "morph_kernel": _CFG["checkerboard"]["morph_kernel_size"],
+        "morph_close_iter": _CFG["checkerboard"]["morph_close_iterations"],
+        "morph_open_iter": _CFG["checkerboard"]["morph_open_iterations"],
+        "min_squares_required": _CFG["checkerboard"]["min_squares_required"],
+        "aspect_ratio_min": _CFG["checkerboard"]["aspect_ratio_min"],
+        "aspect_ratio_max": _CFG["checkerboard"]["aspect_ratio_max"],
+        "extent_min": _CFG["checkerboard"]["extent_min"],
+        "extent_max": _CFG["checkerboard"]["extent_max"],
+        "area_rel_min": _CFG["checkerboard"]["area_rel_min"],
+        "area_rel_max": _CFG["checkerboard"]["area_rel_max"],
         # Hough/Canny params (logged + exposed)
-        "canny_lo": 50,
-        "canny_hi": 150,
-        "hough_threshold": 80,
-        "hough_min_line_frac": 0.08,
-        "hough_max_line_gap": 10,
+        "canny_lo": _CFG["checkerboard"]["canny_low"],
+        "canny_hi": _CFG["checkerboard"]["canny_high"],
+        "hough_threshold": _CFG["checkerboard"]["hough_threshold"],
+        "hough_min_line_frac": _CFG["checkerboard"]["hough_min_line_fraction"],
+        "hough_max_line_gap": _CFG["checkerboard"]["hough_max_line_gap"],
     }
 
     def _dbg(msg: str) -> None:
@@ -661,7 +665,9 @@ def analyze_checkerboard(
 
         if params["use_adaptive"]:
             bw = cv2.adaptiveThreshold(
-                blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 3
+                blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,
+                _CFG["checkerboard"]["adaptive_block_size"],
+                _CFG["checkerboard"]["adaptive_constant"],
             )
         else:
             _, bw = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -783,7 +789,7 @@ def analyze_checkerboard(
             lines = cv2.HoughLinesP(
                 edges, 1, np.pi / 180.0,
                 threshold=int(params["hough_threshold"]),
-                minLineLength=max(30, int(min(gray.shape) * float(params["hough_min_line_frac"]))),
+                minLineLength=max(_CFG["checkerboard"]["hough_min_line_length_px"], int(min(gray.shape) * float(params["hough_min_line_frac"]))),
                 maxLineGap=int(params["hough_max_line_gap"]),
             )
 
@@ -898,7 +904,7 @@ def analyze_concentric_rings(
 
     try:
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if roi.ndim == 3 else roi.copy()
-        gray_blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        gray_blur = cv2.GaussianBlur(gray, tuple(_CFG["concentric_rings"]["gaussian_blur_kernel"]), 0)
 
         if gray_path:
             cv2.imwrite(gray_path, gray_blur)
@@ -920,7 +926,7 @@ def analyze_concentric_rings(
         cy = int(M["m01"] / M["m00"])
 
         # Edges and contours
-        edges = cv2.Canny(binary, 50, 150)
+        edges = cv2.Canny(binary, _CFG["concentric_rings"]["canny_low"], _CFG["concentric_rings"]["canny_high"])
         if edges_path:
             cv2.imwrite(edges_path, edges)
 
@@ -942,9 +948,9 @@ def analyze_concentric_rings(
             r_mean = float(np.mean(dists))
             r_std = float(np.std(dists))
             # Filter out degenerate contours (too small or wildly noisy)
-            if r_mean < 2.0:
+            if r_mean < _CFG["concentric_rings"]["min_radius_px"]:
                 continue
-            if r_std > max(5.0, 0.2 * r_mean):
+            if r_std > max(_CFG["concentric_rings"]["max_radius_std_abs"], _CFG["concentric_rings"]["max_radius_std_rel"] * r_mean):
                 continue
             radii.append(r_mean)
 
@@ -955,7 +961,7 @@ def analyze_concentric_rings(
         radii_sorted = sorted(radii)
         merged: List[float] = []
         current_group: List[float] = []
-        merge_threshold = 3.0  # pixels
+        merge_threshold = _CFG["concentric_rings"]["merge_threshold_px"]
 
         for r in radii_sorted:
             if not current_group:
@@ -970,7 +976,7 @@ def analyze_concentric_rings(
             merged.append(float(np.mean(current_group)))
 
         peaks = np.array(sorted(merged), dtype=float)
-        if peaks.size < 4:
+        if peaks.size < _CFG["concentric_rings"]["min_peaks_required"]:
             result = _nan_ring_result(
                 {"num_peaks": int(peaks.size), "algorithm_error": "too_few_peaks"}
             )
@@ -1077,9 +1083,10 @@ def analyze_pitch_ruler(
         # threshold ink (dark) -> white foreground
         _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        binary = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=1)
-        clean = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=1)
+        _pk = _CFG["pitch_ruler"]["morph_kernel_size"]
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (_pk, _pk))
+        binary = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=_CFG["pitch_ruler"]["morph_close_iterations"])
+        clean = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=_CFG["pitch_ruler"]["morph_open_iterations"])
 
         cnts, _ = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -1092,7 +1099,7 @@ def analyze_pitch_ruler(
         # optionally compute edge map once
         edges = None
         if use_true_edge_width:
-            edges = cv2.Canny(gray, 50, 150)
+            edges = cv2.Canny(gray, _CFG["pitch_ruler"]["canny_low"], _CFG["pitch_ruler"]["canny_high"])
 
         measured_widths: List[float] = []
         percent_errors: List[float] = []
@@ -1221,7 +1228,7 @@ def recommend_compensation_for_dot(summary: Dict[str, float]) -> str:
             return
 
         # Small deadband: ignore errors inside measurement noise
-        deadband_pct = 0.05  # 0.05% → 1 part in 2000
+        deadband_pct = _CFG["health_report"]["deadband_threshold_pct"]
         if abs(err_pct) < deadband_pct:
             return
 
@@ -1294,7 +1301,7 @@ def recommend_compensation_overall(
     pitch_y = by_feat.get("pitch_y")
 
     lines: List[str] = []
-    lines.append("RFAM Dimensional Health Report")
+    lines.append("BJAM Dimensional Health Report")
     lines.append("")
 
     # ------------------------------------------------------------------
@@ -1324,8 +1331,8 @@ def recommend_compensation_overall(
     # - Treat dot diameter as a *deposition/morphology* diagnostic (drop volume + wicking + spreading).
     #
     # This avoids telling the user to "scale" a motion system when the real issue is under/over deposition.
-    spacing_action_thresh_pct = 0.20   # below this, we treat motion scale as "already calibrated"
-    diameter_action_thresh_pct = 0.50  # diameter error beyond this is worth calling out explicitly
+    spacing_action_thresh_pct = _CFG["health_report"]["scale_pct_threshold"]   # below this, we treat motion scale as "already calibrated"
+    diameter_action_thresh_pct = _CFG["health_report"]["diameter_error_pct_threshold"]  # diameter error beyond this is worth calling out explicitly
 
     # ------------------------------------------------------------------
     # Calibration vs compensation: two distinct "scale" signals
@@ -1337,7 +1344,7 @@ def recommend_compensation_overall(
     # ------------------------------------------------------------------
 
     # Thresholds (percent). Keep small so we don't spam tiny changes.
-    SCALE_PCT_THRESH = 0.20
+    SCALE_PCT_THRESH = _CFG["health_report"]["scale_pct_threshold"]
 
     # --- A) Geometric scale (motion calibration) from dot centroid spacing ---
     geom_available = False
@@ -1428,7 +1435,7 @@ def recommend_compensation_overall(
     # Yaw (angular) compensation: checkerboard is the authoritative signal.
     if cb:
         ang_err = cb.get("checkerboard_angle_error_deg", cb.get("angle_deg"))
-        if _finite(ang_err) and abs(float(ang_err)) > 0.05:
+        if _finite(ang_err) and abs(float(ang_err)) > _CFG["health_report"]["yaw_threshold_deg"]:
             direction = "clockwise" if float(ang_err) > 0 else "counter-clockwise"
             lines.append(
                 f"Yaw (printhead/stage rotation): adjust {direction} by about {abs(float(ang_err)):.3f}° "
@@ -1460,9 +1467,9 @@ def recommend_compensation_overall(
         if _finite(mean_d) and _finite(std_d) and float(mean_d) != 0:
             cv = 100.0 * float(std_d) / abs(float(mean_d))
             lines.append(f"Diameter repeatability (CV): {cv:.2f}% (std {float(std_d):.4f} mm).")
-            if cv <= 1.0:
+            if cv <= _CFG["health_report"]["cv_threshold_very_stable"]:
                 lines.append("  Interpretation: very stable jetting. This suggests consistent drop volume and good nozzle health.")
-            elif cv <= 3.0:
+            elif cv <= _CFG["health_report"]["cv_threshold_moderate"]:
                 lines.append("  Interpretation: moderate dot-to-dot variation. Watch ink pressure/temperature drift and occasional weak nozzles.")
             else:
                 lines.append("  Interpretation: high dot-to-dot variation. This often points to nozzle dropouts, unstable pressure regulation, or thresholding/segmentation failure.")
@@ -1486,7 +1493,7 @@ def recommend_compensation_overall(
                     "  Interpretation: dot diameter is sensitive to spreading and drop volume. Prefer dot spacing for motion scale when available."
                 )
 
-            if abs(de) >= 0.5:
+            if abs(de) >= _CFG["health_report"]["diameter_error_pct_threshold"]:
                 if de < 0:
                     lines.append(
                         "  Watch-outs: under-deposition or limited spreading. Check jetting waveform/drive, nozzle health, ink supply pressure, "
@@ -1503,9 +1510,9 @@ def recommend_compensation_overall(
         if _finite(c_norm):
             cn = float(c_norm)
             lines.append(f"Normalized circularity (mean): {cn:.3f} (1.0 is ideal for this imaging pipeline).")
-            if cn >= 0.97:
+            if cn >= _CFG["health_report"]["circularity_threshold_high"]:
                 lines.append("  Interpretation: dots are compact with clean edges. Spreading/coalescence is low under current conditions.")
-            elif cn >= 0.93:
+            elif cn >= _CFG["health_report"]["circularity_threshold_med"]:
                 lines.append("  Interpretation: mild edge growth or roughness. Watch binder spread, substrate absorption, and scan contrast.")
             else:
                 lines.append("  Interpretation: significant spreading/coalescence or rough edges. Scaling and yaw compensation will not fix this. Check binder formulation/viscosity, droplet volume, substrate wetting, and jetting frequency vs motion speed.")
@@ -1522,7 +1529,7 @@ def recommend_compensation_overall(
             lines.append(f"Mean ellipse orientation: {float(ang):.1f}° (diagnostic only).")
 
         # Provide a single, explicit physical interpretation of anisotropy.
-        if (_finite(ar) and float(ar) > 1.05) or (_finite(ecc) and float(ecc) > 0.20):
+        if (_finite(ar) and float(ar) > _CFG["health_report"]["aspect_ratio_threshold"]) or (_finite(ecc) and float(ecc) > _CFG["health_report"]["eccentricity_threshold"]):
             lines.append("  Interpretation: consistent elongation indicates directional spreading or timing mismatch between gantry velocity and jetting (phase error).")
             lines.append("  What to check: jetting trigger timing vs motion, raster direction effects, paper fiber orientation, and any airflow/recoater interaction that biases wetting.")
         else:
@@ -1532,7 +1539,7 @@ def recommend_compensation_overall(
         # Dot-grid rotation: explicitly de-emphasized for compensation
 
         dg = dot.get("grid_rotation_deg")
-        if _finite(dg) and abs(float(dg)) > 0.1:
+        if _finite(dg) and abs(float(dg)) > _CFG["health_report"]["grid_rotation_threshold_deg"]:
             lines.append(f"Dot-grid rotation (diagnostic): {float(dg):+.2f}° (not used for yaw compensation).")
 
         lines.append("")
@@ -1555,7 +1562,7 @@ def recommend_compensation_overall(
             lines.append(
                 f"Square size error: {float(sq_err_pct):+.3f}% (diagnostic cross-check; primary scale comes from dot spacing)."
             )
-            if abs(float(sq_err_pct)) <= 1.0:
+            if abs(float(sq_err_pct)) <= _CFG["health_report"]["square_error_tolerance_pct"]:
                 lines.append("  Interpretation: checkerboard agrees with dot-based calibration. Scale is likely well-captured.")
             else:
                 lines.append("  Interpretation: mismatch suggests either dot morphology effects (spreading) or local distortion/segmentation. Trust dot spacing for calibration; treat checkerboard scale as a warning flag.")
@@ -1650,11 +1657,12 @@ def recommend_compensation_overall(
                 if math.isnan(nom) or math.isnan(mval) or math.isnan(e):
                     continue
                 triples.append((nom, mval, e))
-            good = [(nom, mval, e) for (nom, mval, e) in triples if abs(e) <= 10.0]
+            _pitch_acc_thresh = _CFG["health_report"]["pitch_accuracy_threshold_pct"]
+            good = [(nom, mval, e) for (nom, mval, e) in triples if abs(e) <= _pitch_acc_thresh]
             if good:
                 nom_g, m_g, e_g = min(good, key=lambda t: t[0])
                 out.append(
-                    f"{label}: minimum *accurate* nominal width (|error|≤10%) ≈ {nom_g:.3f} mm "
+                    f"{label}: minimum *accurate* nominal width (|error|<={_pitch_acc_thresh}%) ≈ {nom_g:.3f} mm "
                     f"(error {e_g:+.2f}%, {m_g - nom_g:+.4f} mm)."
                 )
         except Exception:

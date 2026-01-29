@@ -1,4 +1,4 @@
-"""Utility functions for RFAM Image Analysis Tool."""
+"""Utility functions for BJAM Image Analysis Tool."""
 import math
 
 def distance(point1, point2):

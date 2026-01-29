@@ -10,17 +10,17 @@ test:  ## Run tests
 	pytest tests/ -v --tb=short
 
 lint:  ## Run linters
-	flake8 rfam_toolbox --max-line-length=120
-	black --check rfam_toolbox
+	flake8 bjam_toolbox --max-line-length=120
+	black --check bjam_toolbox
 
 format:  ## Auto-format code
-	black rfam_toolbox
+	black bjam_toolbox
 
 build:  ## Build sdist and wheel
 	python -m build
 
 clean:  ## Remove build artifacts
-	rm -rf build/ dist/ *.egg-info rfam_toolbox.egg-info
+	rm -rf build/ dist/ *.egg-info bjam_toolbox.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -name "*.pyc" -delete 2>/dev/null || true
 

@@ -1,11 +1,11 @@
-# RFAM Toolbox
+# BJAM Toolbox
 
 [![CI](https://github.com/mattlmccoy/rfam-toolbox/actions/workflows/ci.yml/badge.svg)](https://github.com/mattlmccoy/rfam-toolbox/actions/workflows/ci.yml)
-[![PyPI version](https://img.shields.io/pypi/v/rfam-toolbox.svg)](https://pypi.org/project/rfam-toolbox/)
+[![PyPI version](https://img.shields.io/pypi/v/bjam-toolbox.svg)](https://pypi.org/project/bjam-toolbox/)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**Open-source tools for Radio Frequency Additive Manufacturing (RFAM) and Binder Jet Additive Manufacturing (BJAM) process development.**
+**Open-source tools for Binder Jet Additive Manufacturing (BJAM) process development.**
 
 This repository provides two complementary analysis tools designed to help researchers and operators assess and improve print quality:
 
@@ -21,7 +21,7 @@ Both tools use high-resolution flatbed scanners as the primary imaging device, p
 ### Quick Install (all platforms)
 
 ```bash
-pip install rfam-toolbox
+pip install bjam-toolbox
 ```
 
 ### From Source
@@ -74,7 +74,7 @@ sudo apt-get install poppler-utils
 # Windows — download from https://github.com/osber/pdf2image
 ```
 
-Then install the PDF extra: `pip install rfam-toolbox[pdf]`
+Then install the PDF extra: `pip install bjam-toolbox[pdf]`
 
 For detailed platform-specific instructions, see [INSTALL.md](INSTALL.md).
 
@@ -85,13 +85,13 @@ For detailed platform-specific instructions, see [INSTALL.md](INSTALL.md).
 ### Launch the tool
 
 ```bash
-rfam-toolbox
+bjam-toolbox
 ```
 
 Or equivalently:
 
 ```bash
-python -m rfam_toolbox
+python -m bjam_toolbox
 ```
 
 A dialog will ask which workflow you want to use:
@@ -101,7 +101,7 @@ A dialog will ask which workflow you want to use:
 ### Verify Installation
 
 ```bash
-rfam-toolbox --version
+bjam-toolbox --version
 ```
 
 ---
@@ -159,8 +159,8 @@ rfam-toolbox --version
 
 ```
 rfam-toolbox/
-├── rfam_toolbox/              # Main package
-│   ├── __main__.py            # python -m rfam_toolbox entry point
+├── bjam_toolbox/              # Main package
+│   ├── __main__.py            # python -m bjam_toolbox entry point
 │   ├── launcher.py            # Unified entry point
 │   ├── dimensional/           # Dimensional accuracy analysis
 │   │   ├── gui.py             # GUI for dimensional workflow
@@ -220,7 +220,7 @@ The tool is designed to work with calibration patterns containing:
 
 You can generate custom patterns using:
 ```python
-from rfam_toolbox.dimensional.geometry import generate_pattern
+from bjam_toolbox.dimensional.geometry import generate_pattern
 generate_pattern(dpi=4800, output_path="my_pattern.png")
 ```
 

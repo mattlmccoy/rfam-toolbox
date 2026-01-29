@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-GUI for ROI drawing and labeling for the RFAM analysis tool.
+GUI for ROI drawing and labeling for the BJAM analysis tool.
 
 This module provides an interactive interface to select regions of interest
 (ROIs) on a scanned image.  ROIs can be polygons, circles or ruler
@@ -50,7 +50,7 @@ ink_shortnames = {
     '4': 'sharpie'
 }
 
-window_name = 'RFAM Analyzer'
+window_name = 'BJAM Analyzer'
 
 def ask_ruler_length():
     """Dialog: ask for real-world length (mm) and conversion choice."""
@@ -204,7 +204,7 @@ def main():
     root = tk.Tk()
     root.withdraw()
     path = filedialog.askopenfilename(
-        initialdir="/Users/mattmccoy/GaTech Dropbox/Matthew McCoy/mattmccoy-research/research/binderjet/code/rfam_tool",
+        initialdir=os.path.expanduser("~"),
         title="Select image",
         filetypes=[
             ("Images", ("*.png","*.jpg","*.jpeg","*.tif","*.tiff","*.bmp")),

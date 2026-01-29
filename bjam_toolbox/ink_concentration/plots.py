@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-plots.py — Matplotlib plotting for RFAM ROI tool, with saving and multi-metric visualization
+plots.py — Matplotlib plotting for BJAM ROI tool, with saving and multi-metric visualization
 """
 
 import os

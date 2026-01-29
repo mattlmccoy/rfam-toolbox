@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-dim_gui.py — graphical dimensional analysis tool for RFAM patterns.
+dim_gui.py — graphical dimensional analysis tool for BJAM patterns.
 
 Each run is stored in:
   session_data/run_YYYYMMDD_HHMMSS_<sanitized tags>/
@@ -46,25 +46,25 @@ import numpy as np
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 
-try:
-    from pdf2image import convert_from_path  # optional — for PDF → image
-except ImportError:
-    convert_from_path = None
+from pdf2image import convert_from_path
 
-from rfam_toolbox.dimensional.analysis import (
+from bjam_toolbox.defaults.config_loader import load_config
+_CFG = load_config()
+
+from bjam_toolbox.dimensional.analysis import (
     analyze_dot_array,
     analyze_checkerboard,
     analyze_concentric_rings,
     analyze_pitch_ruler,
     recommend_compensation_overall,
 )
-from rfam_toolbox.dimensional.analysis import FEATURE_ANALYSIS_VERSION, CIRCULARITY_NORM_BASE
+from bjam_toolbox.dimensional.analysis import FEATURE_ANALYSIS_VERSION, CIRCULARITY_NORM_BASE
 
 
 class DimensionalGUI:
     def __init__(self, master: tk.Tk) -> None:
         self.master = master
-        master.title("RFAM Dimensional Accuracy Tool")
+        master.title("BJAM Dimensional Accuracy Tool")
 
 
 
@@ -76,14 +76,22 @@ class DimensionalGUI:
         except Exception:
             pass
 
+        # Directory defaults
+        self.input_dir = os.path.expanduser("~")
+        self.output_dir = os.path.join(os.getcwd(), "bjam_output")
+
+        # Directory StringVars
+        self.input_dir_var = tk.StringVar(value=self.input_dir)
+        self.output_dir_var = tk.StringVar(value=self.output_dir + "  (default)")
+
         # State
         self.image_path: str | None = None
         self.full_image: np.ndarray | None = None
 
-        # Internal calibration state: pixels per mm (default for 3000 dpi)
-        self.px_per_mm: float = 118.11
+        # Internal calibration state: pixels per mm (default from config)
+        self.px_per_mm: float = _CFG["calibration"]["default_dpi"] / 25.4
         # User-facing calibration variables
-        self.dpi_var = tk.StringVar(value="3000")
+        self.dpi_var = tk.StringVar(value=str(_CFG["calibration"]["default_dpi"]))
         self.px_per_mm_var = tk.StringVar(value=f"{self.px_per_mm:.3f}")
 
         # Track last run directory for per-run plotting
@@ -99,7 +107,7 @@ class DimensionalGUI:
         self.ink_other_var = tk.StringVar()
         self.feather_choice_var = tk.StringVar(value="100%")
         self.feather_other_var = tk.StringVar()
-        self.gantry_speed_var = tk.StringVar(value="100")
+        self.gantry_speed_var = tk.StringVar(value=str(_CFG["calibration"]["default_gantry_speed_mmps"]))
 
         # Feature selection vars
         self.var_dot = tk.BooleanVar(value=True)
@@ -114,6 +122,19 @@ class DimensionalGUI:
     # ------------------------------------------------------------------ UI
 
     def _build_ui(self) -> None:
+        # Directories
+        dir_frame = tk.LabelFrame(self.master, text="Directories")
+        dir_frame.pack(fill="x", padx=10, pady=5)
+
+        tk.Label(dir_frame, text="Input:").grid(row=0, column=0, sticky="w", padx=(5, 2))
+        tk.Button(dir_frame, text="Browse...", command=self._browse_input_dir).grid(row=0, column=1, padx=2)
+        tk.Label(dir_frame, textvariable=self.input_dir_var, anchor="w").grid(row=0, column=2, sticky="w", padx=5)
+
+        tk.Label(dir_frame, text="Output:").grid(row=1, column=0, sticky="w", padx=(5, 2))
+        tk.Button(dir_frame, text="Browse...", command=self._browse_output_dir).grid(row=1, column=1, padx=2)
+        tk.Label(dir_frame, textvariable=self.output_dir_var, anchor="w").grid(row=1, column=2, sticky="w", padx=5)
+        tk.Button(dir_frame, text="Reset", command=self._reset_output_dir).grid(row=1, column=3, padx=5)
+
         # File selection
         file_frame = tk.Frame(self.master)
         file_frame.pack(fill="x", padx=10, pady=5)
@@ -209,9 +230,26 @@ class DimensionalGUI:
         self.px_per_mm = px_per_mm
         self.px_per_mm_var.set(f"{px_per_mm:.3f}")
 
+    def _browse_input_dir(self):
+        d = filedialog.askdirectory(initialdir=self.input_dir, title="Select input directory")
+        if d:
+            self.input_dir = d
+            self.input_dir_var.set(d)
+
+    def _browse_output_dir(self):
+        d = filedialog.askdirectory(initialdir=self.output_dir, title="Select output directory")
+        if d:
+            self.output_dir = d
+            self.output_dir_var.set(d)
+
+    def _reset_output_dir(self):
+        self.output_dir = os.path.join(os.getcwd(), "bjam_output")
+        self.output_dir_var.set(self.output_dir + "  (default)")
+
     def select_image(self) -> None:
         path = filedialog.askopenfilename(
             title="Select image or PDF",
+            initialdir=self.input_dir,
             filetypes=[
                 ("Images/PDF", "*.png *.jpg *.jpeg *.tif *.tiff *.bmp *.pdf"),
                 ("Images", "*.png *.jpg *.jpeg *.tif *.tiff *.bmp"),
@@ -224,25 +262,21 @@ class DimensionalGUI:
 
         img = self._load_image_any(path)
         if img is None:
-            messagebox.showerror("RFAM", f"Failed to load image: {path}")
+            messagebox.showerror("BJAM", f"Failed to load image: {path}")
             return
 
         self.image_path = path
         self.full_image = img
         self.file_label.config(text=os.path.basename(path))
-        self.master.title(f"RFAM Dimensional Accuracy Tool — {os.path.basename(path)}")
+        self.master.title(f"BJAM Dimensional Accuracy Tool — {os.path.basename(path)}")
+
+        # Update input directory to parent of the selected file
+        self.input_dir = os.path.dirname(path)
+        self.input_dir_var.set(self.input_dir)
 
     def _load_image_any(self, path: str) -> np.ndarray | None:
         ext = os.path.splitext(path)[1].lower()
         if ext == ".pdf":
-            if convert_from_path is None:
-                messagebox.showerror(
-                    "Missing dependency",
-                    "PDF support requires the pdf2image package and poppler.\n\n"
-                    "Install with:  pip install rfam-toolbox[pdf]\n"
-                    "Then install poppler for your OS (see INSTALL.md).",
-                )
-                return None
             try:
                 pages = convert_from_path(path, dpi=300)
                 if not pages:
@@ -269,9 +303,8 @@ class DimensionalGUI:
         s = "".join(safe).strip("_")
         return s or "sample"
 
-    @staticmethod
-    def _session_root() -> str:
-        root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "session_data")
+    def _session_root(self) -> str:
+        root = self.output_dir
         os.makedirs(root, exist_ok=True)
         return root
 
@@ -279,7 +312,7 @@ class DimensionalGUI:
 
     def run_analysis(self) -> None:
         if self.full_image is None:
-            messagebox.showwarning("RFAM", "Please select an image or PDF first.")
+            messagebox.showwarning("BJAM", "Please select an image or PDF first.")
             return
 
         # Validate DPI and update internal pixels-per-mm before analysis
@@ -288,7 +321,7 @@ class DimensionalGUI:
             if dpi_val <= 0:
                 raise ValueError
         except ValueError:
-            messagebox.showerror("RFAM", "Invalid scanner DPI value.")
+            messagebox.showerror("BJAM", "Invalid scanner DPI value.")
             return
 
         self.px_per_mm = dpi_val / 25.4
@@ -358,7 +391,7 @@ class DimensionalGUI:
 
         debug_log_path = os.path.join(run_dir, "run_debug.txt")
         with open(debug_log_path, "w") as f_dbg:
-            f_dbg.write("RFAM Dimensional Accuracy Tool\\n")
+            f_dbg.write("BJAM Dimensional Accuracy Tool\\n")
             f_dbg.write(f"timestamp={ts_run}\\n")
             f_dbg.write(f"gui_version={GUI_VERSION}\\n")
             f_dbg.write(f"analysis_version={FEATURE_ANALYSIS_VERSION}\\n")
@@ -391,7 +424,7 @@ class DimensionalGUI:
         ]
 
         if not any(flag for _, flag in feature_order):
-            messagebox.showwarning("RFAM", "Please select at least one feature to analyse.")
+            messagebox.showwarning("BJAM", "Please select at least one feature to analyse.")
             return
 
         # Get nominal parameters for each selected feature
@@ -401,39 +434,39 @@ class DimensionalGUI:
                 continue
             if feat == "dot":
                 nom_d = simpledialog.askfloat(
-                    "Dot array", "Nominal dot diameter (mm):", initialvalue=2.0, minvalue=0.0
+                    "Dot array", "Nominal dot diameter (mm):", initialvalue=_CFG["dot_array"]["nominal_diameter_mm"], minvalue=0.0
                 )
                 nom_s = simpledialog.askfloat(
-                    "Dot array", "Nominal dot spacing (mm):", initialvalue=6.0, minvalue=0.0
+                    "Dot array", "Nominal dot spacing (mm):", initialvalue=_CFG["dot_array"]["nominal_spacing_mm"], minvalue=0.0
                 )
                 if not nom_d or not nom_s:
-                    messagebox.showwarning("RFAM", "Invalid dot parameters; skipping.")
+                    messagebox.showwarning("BJAM", "Invalid dot parameters; skipping.")
                     continue
                 feature_params[feat] = (nom_d, nom_s)
             elif feat == "checkerboard":
                 nom_sq = simpledialog.askfloat(
-                    "Checkerboard", "Nominal checker square size (mm):", initialvalue=2.0, minvalue=0.0
+                    "Checkerboard", "Nominal checker square size (mm):", initialvalue=_CFG["checkerboard"]["nominal_square_size_mm"], minvalue=0.0
                 )
                 if not nom_sq:
-                    messagebox.showwarning("RFAM", "Invalid checkerboard parameters; skipping.")
+                    messagebox.showwarning("BJAM", "Invalid checkerboard parameters; skipping.")
                     continue
                 feature_params[feat] = (nom_sq,)
             elif feat == "rings":
                 nom_line = simpledialog.askfloat(
-                    "Concentric rings", "Nominal ring line width (mm):", initialvalue=0.5, minvalue=0.0
+                    "Concentric rings", "Nominal ring line width (mm):", initialvalue=_CFG["concentric_rings"]["nominal_line_width_mm"], minvalue=0.0
                 )
                 nom_space = simpledialog.askfloat(
-                    "Concentric rings", "Nominal ring spacing (mm):", initialvalue=0.5, minvalue=0.0
+                    "Concentric rings", "Nominal ring spacing (mm):", initialvalue=_CFG["concentric_rings"]["nominal_spacing_mm"], minvalue=0.0
                 )
                 num_rings = simpledialog.askinteger(
-                    "Concentric rings", "Number of rings to sample:", initialvalue=20, minvalue=1
+                    "Concentric rings", "Number of rings to sample:", initialvalue=_CFG["concentric_rings"]["num_rings"], minvalue=1
                 )
                 if not nom_line or not nom_space or not num_rings:
-                    messagebox.showwarning("RFAM", "Invalid ring parameters; skipping.")
+                    messagebox.showwarning("BJAM", "Invalid ring parameters; skipping.")
                     continue
                 feature_params[feat] = (nom_line, nom_space, num_rings)
             elif feat in ("pitch_x", "pitch_y"):
-                default_nom = "6,4,2,1,0.8,0.6,0.4,0.2,0.1"
+                default_nom = ",".join(str(w) for w in _CFG["pitch_ruler"]["nominal_bar_widths_mm"])
                 txt = simpledialog.askstring(
                     "Pitch ruler",
                     f"Nominal bar widths (mm) ({'left→right' if feat=='pitch_x' else 'bottom→top'}), "
@@ -441,18 +474,18 @@ class DimensionalGUI:
                     initialvalue=default_nom,
                 )
                 if not txt:
-                    messagebox.showwarning("RFAM", "Invalid pitch parameters; skipping.")
+                    messagebox.showwarning("BJAM", "Invalid pitch parameters; skipping.")
                     continue
                 parts = [p.strip() for p in txt.split(",") if p.strip()]
                 try:
                     nominal_widths = [float(p) for p in parts]
                 except ValueError:
-                    messagebox.showwarning("RFAM", "Invalid pitch parameters; skipping.")
+                    messagebox.showwarning("BJAM", "Invalid pitch parameters; skipping.")
                     continue
                 feature_params[feat] = (nominal_widths,)
 
         if not feature_params:
-            messagebox.showinfo("RFAM", "No valid feature parameters given.")
+            messagebox.showinfo("BJAM", "No valid feature parameters given.")
             return
 
         results_summary: List[Tuple[str, Dict[str, float]]] = []
@@ -472,7 +505,7 @@ class DimensionalGUI:
             cv2.destroyWindow(f"ROI for {feat}")
             x_disp, y_disp, w_box, h_box = roi_box
             if w_box <= 0 or h_box <= 0:
-                messagebox.showwarning("RFAM", f"No ROI selected for {feat}; skipping.")
+                messagebox.showwarning("BJAM", f"No ROI selected for {feat}; skipping.")
                 continue
 
             # Map ROI back to full-resolution coordinates
@@ -507,7 +540,7 @@ class DimensionalGUI:
                         self.px_per_mm,
                         nominal_diameter_mm=nom_d,
                         nominal_spacing_mm=nom_s,
-                        spacing_tol=0.3,
+                        spacing_tol=_CFG["dot_array"]["spacing_tolerance"],
                         debug_overlay_path=debug_path,
                     )
                     # Collect per-blob raw measurements for this run
@@ -576,7 +609,7 @@ class DimensionalGUI:
                 else:
                     continue
             except Exception as exc:
-                messagebox.showerror("RFAM", f"Error analysing {feat}: {exc}")
+                messagebox.showerror("BJAM", f"Error analysing {feat}: {exc}")
                 continue
 
             results_summary.append((feat, summary))
@@ -599,7 +632,7 @@ class DimensionalGUI:
             raw_rows.append(base_row)
 
         if not results_summary:
-            messagebox.showinfo("RFAM", "No analyses performed.")
+            messagebox.showinfo("BJAM", "No analyses performed.")
             return
 
         # Save results for this run into run_dir/results.csv
@@ -675,7 +708,7 @@ class DimensionalGUI:
 
         # Human-readable summary
         text_lines: List[str] = []
-        text_lines.append("RFAM Dimensional Analysis Summary")
+        text_lines.append("BJAM Dimensional Analysis Summary")
         text_lines.append(f"Source image: {self.image_path}")
         text_lines.append(f"Run directory: {run_dir}")
         text_lines.append(f"Results CSV: {csv_path}")
@@ -721,7 +754,7 @@ class DimensionalGUI:
                 f_comp.write(comp_txt)
 
         messagebox.showinfo(
-            "RFAM",
+            "BJAM",
             f"Analysis complete.\n\nRun directory:\n{run_dir}\n\nResults:\n{csv_path}\n\n"
             f"Summary:\n{summary_path}",
         )
@@ -732,12 +765,12 @@ class DimensionalGUI:
         """Plot per-instance metrics for the most recent run using raw.csv."""
         run_dir = getattr(self, "_last_run_dir", None)
         if not run_dir or not os.path.isdir(run_dir):
-            messagebox.showwarning("RFAM", "No recent analysis run found. Please run analysis first.")
+            messagebox.showwarning("BJAM", "No recent analysis run found. Please run analysis first.")
             return
 
         raw_path = os.path.join(run_dir, "raw.csv")
         if not os.path.exists(raw_path):
-            messagebox.showinfo("RFAM", "No raw.csv file found for the most recent run.")
+            messagebox.showinfo("BJAM", "No raw.csv file found for the most recent run.")
             return
 
         # Load all raw rows
@@ -746,13 +779,13 @@ class DimensionalGUI:
             raw_rows = list(reader)
 
         if not raw_rows:
-            messagebox.showinfo("RFAM", "raw.csv is empty for this run.")
+            messagebox.showinfo("BJAM", "raw.csv is empty for this run.")
             return
 
         # Determine available features and provide a default
         features_available = sorted({r.get("feature", "") for r in raw_rows if r.get("feature")})
         if not features_available:
-            messagebox.showinfo("RFAM", "No feature column found in raw.csv.")
+            messagebox.showinfo("BJAM", "No feature column found in raw.csv.")
             return
 
         feat_default = "dot" if "dot" in features_available else features_available[0]
@@ -763,7 +796,7 @@ class DimensionalGUI:
             initialvalue=feat_default,
         )
         if not feat or feat not in features_available:
-            messagebox.showwarning("RFAM", "Invalid feature for plotting.")
+            messagebox.showwarning("BJAM", "Invalid feature for plotting.")
             return
 
         metric_default = "eq_diam_mm" if feat == "dot" else ""
@@ -773,7 +806,7 @@ class DimensionalGUI:
             initialvalue=metric_default,
         )
         if not metric:
-            messagebox.showwarning("RFAM", "No metric provided.")
+            messagebox.showwarning("BJAM", "No metric provided.")
             return
 
         xs: List[float] = []
@@ -799,7 +832,7 @@ class DimensionalGUI:
             ys.append(val)
 
         if not ys:
-            messagebox.showinfo("RFAM", f"No data found in raw.csv for feature '{feat}' and metric '{metric}'.")
+            messagebox.showinfo("BJAM", f"No data found in raw.csv for feature '{feat}' and metric '{metric}'.")
             return
 
         fig_dir = os.path.join(run_dir, "figures")
@@ -840,7 +873,7 @@ class DimensionalGUI:
             feature_choices.append("pitch_y")
 
         if not feature_choices:
-            messagebox.showwarning("RFAM", "Please enable at least one feature for plotting.")
+            messagebox.showwarning("BJAM", "Please enable at least one feature for plotting.")
             return
 
         # Default metric is spacing_x_error_pct for dot, mean_line_width_mm for rings, etc.
@@ -853,7 +886,7 @@ class DimensionalGUI:
             initialvalue="dot",
         )
         if not feat or feat not in feature_choices:
-            messagebox.showwarning("RFAM", "Invalid feature for plotting.")
+            messagebox.showwarning("BJAM", "Invalid feature for plotting.")
             return
 
         metric = simpledialog.askstring(
@@ -862,7 +895,7 @@ class DimensionalGUI:
             initialvalue=metric_default,
         )
         if not metric:
-            messagebox.showwarning("RFAM", "No metric provided.")
+            messagebox.showwarning("BJAM", "No metric provided.")
             return
 
         csv_paths: List[str] = []
@@ -872,7 +905,7 @@ class DimensionalGUI:
                     csv_paths.append(os.path.join(root, fn))
 
         if not csv_paths:
-            messagebox.showinfo("RFAM", "No results.csv files found under session_data.")
+            messagebox.showinfo("BJAM", "No results.csv files found under session_data.")
             return
 
         values: List[float] = []
@@ -892,7 +925,7 @@ class DimensionalGUI:
                     values.append(val)
 
         if not values:
-            messagebox.showinfo("RFAM", f"No data found for feature '{feat}' and metric '{metric}'.")
+            messagebox.showinfo("BJAM", f"No data found for feature '{feat}' and metric '{metric}'.")
             return
 
         fig_root = os.path.join(session_root, "figures")

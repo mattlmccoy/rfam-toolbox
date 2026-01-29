@@ -33,5 +33,5 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        # Uses trusted publishing — configure at https://pypi.org/manage/project/rfam-toolbox/settings/publishing/
+        # Uses trusted publishing — configure at https://pypi.org/manage/project/bjam-toolbox/settings/publishing/
         # No API token needed when OIDC is set up.

@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-main.py — orchestrates GUI, analysis, and data export for RFAM ROI tool with extended metrics and organized figure output at 300 dpi
+main.py — orchestrates GUI, analysis, and data export for BJAM ROI tool with extended metrics and organized figure output at 300 dpi
 """
 import os
 import cv2
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-from rfam_toolbox.ink_concentration.gui import main as gui_main
-from rfam_toolbox.ink_concentration.analyzer import compute_metrics, threshold_image
+from bjam_toolbox.ink_concentration.gui import main as gui_main
+from bjam_toolbox.ink_concentration.analyzer import compute_metrics, threshold_image
 import numpy as np
-from rfam_toolbox.common.dataio import build_dataframe, export_csv
-from rfam_toolbox.ink_concentration.plots import (
+from bjam_toolbox.common.dataio import build_dataframe, export_csv
+from bjam_toolbox.ink_concentration.plots import (
     plot_histogram,
     plot_boxplot,
     plot_area_histogram,
@@ -28,7 +28,7 @@ from rfam_toolbox.ink_concentration.plots import (
 
 
 def main():
-    """Run the RFAM ROI selection and analysis pipeline.
+    """Run the BJAM ROI selection and analysis pipeline.
 
     This function orchestrates the ROI selection, metric computation and
     plotting for a single session.  A full‐resolution copy of the input
@@ -44,16 +44,19 @@ def main():
         print("No ROIs collected; exiting.")
         return
 
-    # Ask whether to display figures during analysis.  Figures are
-    # always saved to disk, but showing them can slow down processing for
-    # large datasets.  Press Enter for the default (yes).  Any
-    # response starting with 'n' will suppress the interactive plots.
-    try:
-        show_prompt = input("Display figures during analysis? (y/n) [y]: ")
-    except EOFError:
-        show_prompt = ''
-    if show_prompt.strip().lower().startswith('n'):
-        from rfam_toolbox.ink_concentration import plots  # late import to avoid circular dependency
+    # Ask whether to display figures during analysis via a GUI dialog.
+    # Figures are always saved to disk regardless of the choice.
+    import tkinter as _tk
+    from tkinter import messagebox as _mb
+    _root = _tk.Tk()
+    _root.withdraw()
+    show_figs = _mb.askyesno(
+        "Display Figures",
+        "Show figures during analysis?\n(Figures are always saved to disk.)",
+    )
+    _root.destroy()
+    if not show_figs:
+        from bjam_toolbox.ink_concentration import plots  # late import to avoid circular dependency
         plots.SHOW_FIGURES = False
 
     # Reload the original image from disk.  Reading the file again

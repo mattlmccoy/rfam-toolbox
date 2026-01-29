@@ -1,4 +1,4 @@
-# Contributing to RFAM Toolbox
+# Contributing to BJAM Toolbox
 
 Contributions are welcome! This guide covers how to set up the project for development and submit changes.
 
@@ -27,10 +27,10 @@ make dev
 
 ## Project Structure
 
-- `rfam_toolbox/` — main package source code
-- `rfam_toolbox/dimensional/` — dimensional accuracy analysis module
-- `rfam_toolbox/ink_concentration/` — ink concentration analysis module
-- `rfam_toolbox/common/` — shared utilities
+- `bjam_toolbox/` — main package source code
+- `bjam_toolbox/dimensional/` — dimensional accuracy analysis module
+- `bjam_toolbox/ink_concentration/` — ink concentration analysis module
+- `bjam_toolbox/common/` — shared utilities
 - `geometries/` — reference calibration patterns
 - `scripts/` — install helper scripts
 - `tests/` — unit tests
@@ -90,7 +90,7 @@ pytest tests/ -v
 
 ## Release Process (maintainers)
 
-1. Update the version in `rfam_toolbox/__init__.py` and `pyproject.toml`
+1. Update the version in `bjam_toolbox/__init__.py` and `pyproject.toml`
 2. Commit the version bump
 3. Create a GitHub Release with a tag like `v1.0.1`
 4. The `publish.yml` workflow will automatically build and push to PyPI

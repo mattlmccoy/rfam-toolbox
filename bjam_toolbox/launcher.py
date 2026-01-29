@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-rfam_launcher.py — unified entry point for the RFAM analysis toolkit.
+bjam_launcher.py — unified entry point for the BJAM analysis toolkit.
 
 This script provides a simple graphical prompt for users to choose
 between the original ROI‑based ink concentration workflow and the
@@ -12,8 +12,8 @@ without removing any existing functionality.
 
 Usage::
 
-    rfam-toolbox
-    python -m rfam_toolbox
+    bjam-toolbox
+    python -m bjam_toolbox
 
 The launcher uses message boxes for simplicity; it does not
 interfere with the individual GUIs of the respective workflows.
@@ -27,8 +27,17 @@ def main() -> None:
     """Prompt the user to choose a workflow and dispatch accordingly."""
     # Handle --version flag
     if "--version" in sys.argv or "-V" in sys.argv:
-        from rfam_toolbox import __version__
-        print(f"rfam-toolbox {__version__}")
+        from bjam_toolbox import __version__
+        print(f"bjam-toolbox {__version__}")
+        return
+
+    # Handle --show-config flag
+    if "--show-config" in sys.argv:
+        from bjam_toolbox.defaults.config_loader import config_path
+        path = config_path()
+        print(f"Config file: {path}")
+        with open(path, "r", encoding="utf-8") as f:
+            print(f.read())
         return
 
     # Create a hidden root window for the dialog
@@ -50,16 +59,16 @@ def main() -> None:
         # When the user chooses dimensional analysis, invoke the
         # GUI-based dimensional workflow defined in the dimensional subpackage.
         try:
-            from rfam_toolbox.dimensional.gui import main as dimensional_main
+            from bjam_toolbox.dimensional.gui import main as dimensional_main
             dimensional_main()
         except Exception as e:
             print("Error launching dimensional analysis:", e)
             raise
     else:
-        # For any other choice (No), fall back to the original ROI tool.
+        # Launch the ink concentration mode-selection menu.
         try:
-            from rfam_toolbox.ink_concentration.main import main as roi_main
-            roi_main()
+            from bjam_toolbox.ink_concentration.menu import main as ic_menu
+            ic_menu()
         except Exception as e:
             print("Error launching ink concentration workflow:", e)
             raise

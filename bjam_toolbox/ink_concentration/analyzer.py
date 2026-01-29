@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-analyzer.py — compute metrics for RFAM ROI tool.
+analyzer.py — compute metrics for BJAM ROI tool.
 """
 import cv2
 import numpy as np

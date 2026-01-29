@@ -25,6 +25,7 @@ from tkinter import filedialog, messagebox
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 from scipy.spatial import ConvexHull
 
 from sklearn.neighbors import KNeighborsClassifier
@@ -166,6 +167,22 @@ def train_lr(df, feats):
     return m
 
 
+# Seaborn theme for classification plots
+_CLS_THEME = dict(style="whitegrid", font_scale=1.05, palette="muted")
+
+_CLS_PALETTE = {
+    "IPA-based": "#2ecc71",
+    "Petroleum-based": "#e74c3c",
+    "5 wt% petroleum": "#e74c3c",
+    "25 wt% petroleum": "#3498db",
+}
+
+
+def _apply_cls_theme():
+    """Apply the BJAM classification seaborn theme."""
+    sns.set_theme(**_CLS_THEME)
+
+
 # ---------------------------------------------------------------------------
 # Decision-region plot helpers
 # ---------------------------------------------------------------------------
@@ -173,29 +190,33 @@ def plot_knn_training_region(train_df, model, plot_feats, ax, title):
     x, y = plot_feats
     preds = model.predict(train_df[FEATURE_COLS].fillna(0).values)
     train_df["_p"] = np.where(preds == 1, "IPA-based", "Petroleum-based")
-    ax.set_title(title)
+    ax.set_title(title, fontweight="bold")
     ax.set_xlabel(x)
     ax.set_ylabel(y)
-    for cls, color in [("IPA-based", "lightblue"), ("Petroleum-based", "lightcoral")]:
+    hull_colors = {"IPA-based": "#2ecc71", "Petroleum-based": "#e74c3c"}
+    for cls, color in hull_colors.items():
         pts_df = train_df.loc[train_df["_p"] == cls, [x, y]].dropna()
         if len(pts_df) >= 3:
             pts = pts_df.values
             hull = ConvexHull(pts)
-            ax.add_patch(plt.Polygon(pts[hull.vertices], color=color, alpha=0.3))
+            ax.add_patch(plt.Polygon(pts[hull.vertices], color=color, alpha=0.2))
     actual = train_df["ink_key"].map(
         {3: "IPA-based", 1: "Petroleum-based", 2: "Petroleum-based", 4: "Control"}
     )
-    for cls, edge in [("IPA-based", "blue"), ("Petroleum-based", "red")]:
+    edge_colors = {"IPA-based": "#27ae60", "Petroleum-based": "#c0392b"}
+    for cls, edge in edge_colors.items():
         mask = actual == cls
         ax.scatter(
             train_df.loc[mask, x],
             train_df.loc[mask, y],
             facecolors="none",
             edgecolors=edge,
+            s=50,
+            linewidths=1.2,
             label=f"Train {cls}",
         )
     train_df.drop(columns=["_p"], inplace=True)
-    ax.legend(loc="best")
+    ax.legend(loc="best", fontsize=8)
 
 
 def plot_lr_training_boundary(train_df, model, plot_feats, ax, title):
@@ -203,23 +224,26 @@ def plot_lr_training_boundary(train_df, model, plot_feats, ax, title):
     coef, inter = model.coef_[0], model.intercept_[0]
     xi = np.array([train_df[x].min(), train_df[x].max()])
     yi = -(coef[FEATURE_COLS.index(x)] * xi + inter) / coef[FEATURE_COLS.index(y)]
-    ax.set_title(title)
+    ax.set_title(title, fontweight="bold")
     ax.set_xlabel(x)
     ax.set_ylabel(y)
-    ax.plot(xi, yi, "k--", label="LR boundary")
+    ax.plot(xi, yi, "k--", lw=1.5, label="LR boundary")
     actual = train_df["ink_key"].map(
         {3: "IPA-based", 1: "Petroleum-based", 2: "Petroleum-based", 4: "Control"}
     )
-    for cls, edge in [("IPA-based", "blue"), ("Petroleum-based", "red")]:
+    edge_colors = {"IPA-based": "#27ae60", "Petroleum-based": "#c0392b"}
+    for cls, edge in edge_colors.items():
         mask = actual == cls
         ax.scatter(
             train_df.loc[mask, x],
             train_df.loc[mask, y],
             facecolors="none",
             edgecolors=edge,
+            s=50,
+            linewidths=1.2,
             label=f"Train {cls}",
         )
-    ax.legend(loc="best")
+    ax.legend(loc="best", fontsize=8)
 
 
 def plot_knn_conc_region(train_petro, model, plot_feats, ax, title):
@@ -228,35 +252,33 @@ def plot_knn_conc_region(train_petro, model, plot_feats, ax, title):
     train_petro["_pc"] = np.where(
         preds == 1, "5 wt% petroleum", "25 wt% petroleum"
     )
-    ax.set_title(title)
+    ax.set_title(title, fontweight="bold")
     ax.set_xlabel(x)
     ax.set_ylabel(y)
-    for cls, color in [
-        ("5 wt% petroleum", "lightgreen"),
-        ("25 wt% petroleum", "navajowhite"),
-    ]:
+    hull_colors = {"5 wt% petroleum": "#e74c3c", "25 wt% petroleum": "#3498db"}
+    for cls, color in hull_colors.items():
         pts_df = train_petro.loc[train_petro["_pc"] == cls, [x, y]].dropna()
         if len(pts_df) >= 3:
             pts = pts_df.values
             hull = ConvexHull(pts)
-            ax.add_patch(plt.Polygon(pts[hull.vertices], color=color, alpha=0.3))
+            ax.add_patch(plt.Polygon(pts[hull.vertices], color=color, alpha=0.2))
     actual = train_petro["ink_key"].map(
         {1: "5 wt% petroleum", 2: "25 wt% petroleum"}
     )
-    for cls, edge in [
-        ("5 wt% petroleum", "green"),
-        ("25 wt% petroleum", "orange"),
-    ]:
+    edge_colors = {"5 wt% petroleum": "#c0392b", "25 wt% petroleum": "#2980b9"}
+    for cls, edge in edge_colors.items():
         mask = actual == cls
         ax.scatter(
             train_petro.loc[mask, x],
             train_petro.loc[mask, y],
             facecolors="none",
             edgecolors=edge,
+            s=50,
+            linewidths=1.2,
             label=f"Train {cls}",
         )
     train_petro.drop(columns=["_pc"], inplace=True)
-    ax.legend(loc="best")
+    ax.legend(loc="best", fontsize=8)
 
 
 def plot_lr_conc_contour(
@@ -634,6 +656,7 @@ def main():
                 )
 
     # ----- 13) Decision-region 2×2 grid -----
+    _apply_cls_theme()
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     if knn:
         plot_knn_training_region(
@@ -737,73 +760,79 @@ def main():
     print(f"Saved metrics CSV to {csv_path}")
 
     # ----- 15) Grouped intensity / histogram-metric plots -----
-    plt.style.use("ggplot")
+    _apply_cls_theme()
 
-    # Boxplot of mean intensity
+    # Seaborn boxplot of mean intensity with strip overlay
     order = df[group_col].unique().tolist()
-    data = [df[df[group_col] == grp]["mean_I"].values for grp in order]
-    fig2, ax2 = plt.subplots(figsize=(8, 5))
-    ax2.boxplot(
-        data,
-        labels=order,
-        patch_artist=True,
-        medianprops=dict(color="black"),
-        boxprops=dict(facecolor="lightgray", edgecolor="gray"),
+    fig2, ax2 = plt.subplots(figsize=(max(8, len(order) * 1.5), 5))
+    sns.boxplot(
+        data=df, x=group_col, y="mean_I", hue=group_col,
+        order=order, ax=ax2, linewidth=1.2, legend=False,
     )
-    ax2.set_title(f"Mean Intensity by {group_label}")
+    sns.stripplot(
+        data=df, x=group_col, y="mean_I",
+        order=order, color="0.3", size=4, alpha=0.5, ax=ax2, jitter=True,
+    )
+    ax2.set_title(f"Mean Intensity by {group_label}", fontweight="bold")
     ax2.set_ylabel("Mean Intensity (0-255)")
-    plt.xticks(rotation=45)
+    ax2.set_xlabel("")
+    plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
-    fig2.savefig(os.path.join(fig_dir, f"boxplot_{unique_id}.png"), dpi=300)
+    fig2.savefig(
+        os.path.join(fig_dir, f"boxplot_{unique_id}.png"),
+        dpi=300, bbox_inches="tight",
+    )
     plt.show()
 
-    # Bar chart of average mean intensity by group
-    means = df.groupby(group_col)["mean_I"].mean()
-    errs = df.groupby(group_col)["mean_I"].std().fillna(0)
-    labels_desc = means.index.tolist()
-    x = np.arange(len(labels_desc))
-    fig3, ax3 = plt.subplots(figsize=(6, 4))
-    ax3.bar(x, means.values, yerr=errs.values, capsize=5, edgecolor="gray")
-    ax3.set_xticks(x)
-    ax3.set_xticklabels(labels_desc, rotation=45, ha="right")
-    ax3.set_title(f"Average Mean Intensity by {group_label}")
+    # Seaborn bar chart of average mean intensity by group
+    fig3, ax3 = plt.subplots(figsize=(max(6, len(order) * 1.2), 4.5))
+    sns.barplot(
+        data=df, x=group_col, y="mean_I", hue=group_col,
+        order=order, ax=ax3, errorbar="sd", capsize=0.15,
+        edgecolor="white", legend=False,
+    )
+    ax3.set_title(f"Average Mean Intensity by {group_label}", fontweight="bold")
     ax3.set_ylabel("Mean Intensity (0-255)")
+    ax3.set_xlabel("")
+    plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
-    fig3.savefig(os.path.join(fig_dir, f"avg_intensity_{unique_id}.png"), dpi=300)
+    fig3.savefig(
+        os.path.join(fig_dir, f"avg_intensity_{unique_id}.png"),
+        dpi=300, bbox_inches="tight",
+    )
     plt.show()
 
-    # Scatter of individual replicates by group
-    fig4, ax4 = plt.subplots(figsize=(8, 5))
-    for i, desc in enumerate(labels_desc):
-        vals = df[df[group_col] == desc]["mean_I"].values
-        xs_jitter = np.random.normal(i, 0.05, size=len(vals))
-        ax4.scatter(xs_jitter, vals, alpha=0.8, edgecolors="w", s=60)
-    ax4.set_xticks(x)
-    ax4.set_xticklabels(labels_desc, rotation=45, ha="right")
-    ax4.set_title(f"Individual Replicate Mean Intensities by {group_label}")
+    # Seaborn swarm plot of individual replicates by group
+    fig4, ax4 = plt.subplots(figsize=(max(8, len(order) * 1.5), 5))
+    sns.swarmplot(
+        data=df, x=group_col, y="mean_I", hue=group_col,
+        order=order, ax=ax4, size=6, alpha=0.8, legend=False,
+    )
+    ax4.set_title(
+        f"Individual Replicate Mean Intensities by {group_label}",
+        fontweight="bold",
+    )
     ax4.set_ylabel("Mean Intensity (0-255)")
+    ax4.set_xlabel("")
+    plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
-    fig4.savefig(os.path.join(fig_dir, f"replicates_{unique_id}.png"), dpi=300)
+    fig4.savefig(
+        os.path.join(fig_dir, f"replicates_{unique_id}.png"),
+        dpi=300, bbox_inches="tight",
+    )
     plt.show()
 
-    # histogram-metric plots
+    # histogram-metric plots (now seaborn-themed via plots.py)
     labels_group = df[group_col].tolist()
     plot_spread(df["std_I"].tolist(), labels_group, save_dir=fig_dir)
-    plt.show()
     plot_iqr(df["iqr_I"].tolist(), labels_group, save_dir=fig_dir)
-    plt.show()
     plot_skewness(df["skewness_I"].tolist(), labels_group, save_dir=fig_dir)
-    plt.show()
     plot_kurtosis(df["kurtosis_I"].tolist(), labels_group, save_dir=fig_dir)
-    plt.show()
     plot_entropy(df["entropy_I"].tolist(), labels_group, save_dir=fig_dir)
-    plt.show()
     plot_pct_zero(df["pct_zero"].tolist(), labels_group, save_dir=fig_dir)
-    plt.show()
     plot_tail_delta(
         df["tail_delta_95_99"].tolist(), labels_group, save_dir=fig_dir
     )
-    plt.show()
 
     messagebox.showinfo(
         "Classification Complete",

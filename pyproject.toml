@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bjam-toolbox"
-version = "2.1.0"
+version = "2.2.0"
 description = "Tools for Binder Jet Additive Manufacturing process analysis"
 readme = "README.md"
 license = "MIT"
@@ -31,6 +31,7 @@ dependencies = [
     "scikit-image>=0.18.0",
     "scikit-learn>=1.0.0",
     "scipy>=1.7.0",
+    "seaborn>=0.12.0",
     "pdf2image>=1.14.0",
 ]
 

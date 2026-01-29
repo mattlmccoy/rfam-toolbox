@@ -23,10 +23,14 @@ from tkinter import filedialog, messagebox
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from sklearn.isotonic import IsotonicRegression
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
+
+# Seaborn theme for concentration estimator plots
+_CE_THEME = dict(style="whitegrid", font_scale=1.05, palette="muted")
 
 # Full set of features used for concentration estimation
 FEATURES = [
@@ -208,6 +212,8 @@ def main():
     knnr = KNeighborsRegressor(n_neighbors=3).fit(scaler.transform(Xm), yb)
 
     # 6) Plot calibration curves
+    sns.set_theme(**_CE_THEME)
+
     xs = np.linspace(Xb.min(), Xb.max(), 200)
     iso_y = iso.predict(xs)
     grid = pd.DataFrame(
@@ -218,26 +224,44 @@ def main():
     )
     knn_y = knnr.predict(scaler.transform(grid[FEATURES].values))
 
-    plt.figure(figsize=(7, 5))
-    plt.scatter(
+    fig, ax = plt.subplots(figsize=(8, 5.5))
+    colors = ["#e74c3c" if k == 1 else "#3498db" for k in train_df["ink_key"]]
+    ax.scatter(
         Xb,
         yb,
-        c=["red" if k == 1 else "blue" for k in train_df["ink_key"]],
-        edgecolor="k",
-        alpha=0.7,
-        label="Train (5% red, 25% blue)",
+        c=colors,
+        edgecolor="white",
+        alpha=0.8,
+        s=55,
+        zorder=5,
     )
-    plt.plot(xs, iso_y, "--", lw=2, label="Isotonic")
-    plt.plot(xs, knn_y, "-", lw=2, label="kNN multifeat")
-    plt.xlabel(best)
-    plt.ylabel("Carbon Conc (wt%)")
-    plt.legend(loc="best")
-    plt.title("Calibration Curves")
+    ax.plot(xs, iso_y, "--", lw=2.5, color=sns.color_palette("muted")[2],
+            label="Isotonic Regression")
+    ax.plot(xs, knn_y, "-", lw=2.5, color=sns.color_palette("muted")[4],
+            label="kNN Multi-feature")
+
+    # Add scatter legend manually
+    from matplotlib.lines import Line2D
+    legend_elements = [
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#e74c3c",
+               markersize=8, label="5 wt% Petroleum"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#3498db",
+               markersize=8, label="25 wt% Petroleum"),
+        Line2D([0], [0], linestyle="--", lw=2, color=sns.color_palette("muted")[2],
+               label="Isotonic Regression"),
+        Line2D([0], [0], linestyle="-", lw=2, color=sns.color_palette("muted")[4],
+               label="kNN Multi-feature"),
+    ]
+    ax.legend(handles=legend_elements, loc="best", fontsize=9)
+    ax.set_xlabel(best)
+    ax.set_ylabel("Carbon Concentration (wt%)")
+    ax.set_title("Concentration Calibration Curves", fontweight="bold")
     plt.tight_layout()
 
     calib_path = os.path.join(output_dir, "concentration_calibration.png")
-    plt.savefig(calib_path, dpi=300)
+    fig.savefig(calib_path, dpi=300, bbox_inches="tight")
     plt.show()
+    plt.close(fig)
     print(f"Saved calibration plot: {calib_path}")
 
     # 7) Estimate session data

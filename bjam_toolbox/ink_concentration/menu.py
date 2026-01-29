@@ -2,11 +2,12 @@
 """
 menu.py — Tkinter launcher for the Ink Concentration analysis modes.
 
-Presents a menu with four mode buttons:
-  1. Data Collection   — launches the ROI + analysis pipeline
-  2. Classification    — material & concentration classifiers
-  3. Plotting          — grouped intensity / histogram-metric plots
-  4. Concentration Estimation — isotonic + kNN regression estimator
+Presents a menu with five mode buttons:
+  1. Data Collection         — launches the ROI + analysis pipeline
+  2. Classification          — material & concentration classifiers (kNN, LR, weighted)
+  3. Bayesian Classification — Bayesian GMM classifier + GP regression
+  4. Plotting                — grouped intensity / histogram-metric plots
+  5. Concentration Estimation — isotonic + kNN regression estimator
 
 This replaces the previous direct-launch behaviour so users see
 the available modes before entering a workflow.
@@ -58,7 +59,7 @@ def main():
         command=_launch_data_collection,
     ).pack(pady=5)
 
-    # 2) Classification
+    # 2) Classification (kNN / LR / Weighted Score)
     def _launch_classification():
         root.destroy()
         from bjam_toolbox.ink_concentration.classification import main as cls_main
@@ -72,12 +73,29 @@ def main():
         command=_launch_classification,
     ).pack(pady=5)
 
-    # 3) Plotting (Coming Soon — plotting is embedded in Classification)
+    # 3) Bayesian Classification (NEW)
+    def _launch_bayesian():
+        root.destroy()
+        from bjam_toolbox.ink_concentration.bayesian_classifier import (
+            main as bay_main,
+        )
+        bay_main()
+
+    tk.Button(
+        btn_frame,
+        text="Bayesian Classification",
+        width=btn_width,
+        height=2,
+        command=_launch_bayesian,
+    ).pack(pady=5)
+
+    # 4) Plotting (Coming Soon — plotting is embedded in Classification)
     def _stub_plotting():
         messagebox.showinfo(
             "Plotting",
-            "Plotting is currently integrated into the Classification mode.\n\n"
-            "Run Classification to generate grouped plots by sample type "
+            "Plotting is currently integrated into the Classification and\n"
+            "Bayesian Classification modes.\n\n"
+            "Run either classifier to generate grouped plots by sample type "
             "or ROI label.\n\n"
             "A standalone plotting mode is planned for a future release.",
         )
@@ -90,7 +108,7 @@ def main():
         command=_stub_plotting,
     ).pack(pady=5)
 
-    # 4) Concentration Estimation
+    # 5) Concentration Estimation
     def _launch_concentration():
         root.destroy()
         from bjam_toolbox.ink_concentration.concentration_estimator import (

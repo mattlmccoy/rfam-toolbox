@@ -57,4 +57,4 @@ Issues = "https://github.com/mattlmccoy/rfam-toolbox/issues"
 include = ["bjam_toolbox*"]
 
 [tool.setuptools.package-data]
-bjam_toolbox = ["**/*.png", "**/*.pdf", "**/*.json"]
+bjam_toolbox = ["**/*.png", "**/*.pdf", "**/*.json", "**/*.csv"]

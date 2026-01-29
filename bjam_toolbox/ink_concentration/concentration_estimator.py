@@ -171,14 +171,28 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # 1) Load petroleum training data
-    train_df = load_and_tag(opts["train_paths"])
-    if train_df.empty:
+    train_df_raw = load_and_tag(opts["train_paths"])
+    if train_df_raw.empty:
         messagebox.showerror("Error", "No training data loaded.")
+        root.destroy()
+        return
+    # Filter to petroleum samples only (ink_key 1 & 2) — IPA (ink_key 3)
+    # has no petroleum concentration and would produce NaN targets.
+    train_df = train_df_raw[train_df_raw["ink_key"].isin([1, 2])].copy()
+    if train_df.empty:
+        messagebox.showerror(
+            "Error",
+            "No petroleum samples (ink_key 1 or 2) found in training data.\n"
+            "Concentration estimation requires petroleum samples.",
+        )
         root.destroy()
         return
     train_df["conc_wt%"] = train_df["ink_key"].map({1: 5.0, 2: 25.0})
     for f in FEATURES:
         train_df[f] = train_df.get(f, np.nan)
+    print(f"Petroleum training samples: {len(train_df)} "
+          f"(5wt%: {(train_df['ink_key']==1).sum()}, "
+          f"25wt%: {(train_df['ink_key']==2).sum()})")
 
     # 2) Load session data
     sess_df = load_and_tag(opts["session_paths"])

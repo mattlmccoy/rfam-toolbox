@@ -59,3 +59,9 @@ backup-OLD/
 
 # Jupyter notebooks checkpoints
 .ipynb_checkpoints/
+
+# Runtime-generated config files
+.config_hash
+
+# BJAM output (user-generated analysis results)
+bjam_output/

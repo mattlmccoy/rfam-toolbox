@@ -250,11 +250,11 @@ The dimensional health report separates two types of outputs:
 If you use this tool in your research, please cite:
 
 ```bibtex
-@article{mccoy2025scanner,
+@unpublished{mccoy2025scanner,
   title={A Low-Cost Scanner-Based Diagnostic Pipeline for Dimensional Metrology
          of Jetting Fidelity in Binder Jet Additive Manufacturing},
   author={McCoy, Matthew L. and Salda{\~n}a, Christopher J. and Seepersad, Carolyn C.},
-  journal={Additive Manufacturing},
+  note={Manuscript in preparation},
   year={2025}
 }
 ```
